@@ -102,7 +102,8 @@ class Interface:
                     matches, logs = self.matcher.find_matches(self.video_directory, self.threshold, num_processes)
                     self.result_queue.put((matches, logs))
                 except Exception as e:
-                    self.result_queue.put(([], [str(e)]))  # Put empty matches and error log in case of error
+                    print(f"An error occurred during the search: {str(e)}")
+                    self.result_queue.put(([], [str(e)]))
                 finally:
                     # Signal that the search is complete using event_generate
                     self.window.event_generate("<<SearchComplete>>", when="tail")
