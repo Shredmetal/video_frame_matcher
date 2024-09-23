@@ -100,10 +100,8 @@ class Interface:
                 try:
                     num_processes = mp.cpu_count()
                     matches, logs = self.matcher.find_matches(self.video_directory, self.threshold, num_processes)
-                    print(f"Search complete. Found {len(matches)} matches.")  # Debug print
                     self.result_queue.put((matches, logs))
                 except Exception as e:
-                    print(f"An error occurred during the search: {str(e)}")
                     self.result_queue.put(([], [str(e)]))  # Put empty matches and error log in case of error
                 finally:
                     # Signal that the search is complete using event_generate
@@ -116,7 +114,6 @@ class Interface:
                 "Please select an image, a video directory, and a write directory before searching.")
 
     def on_search_complete(self, event):
-        print("Search process completed.")
         self.search_button.config(state='normal')
         matches, logs = self.result_queue.get()
         self.display_manager.show_results_popup(matches, logs)
