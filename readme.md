@@ -2,11 +2,13 @@
 
 A quick tool to find the exact episode and timestamp of a frame in a video.
 
+Garbage collects every 1,000 frames it processes. It might take a while to get through a pile of videos because it checks every frame.
+
 ## Features
 - Select target image
 - Choose directory of videos to search
 - Adjust similarity threshold
-- Displays matches with episode filename and timestamp
+- Displays matches with video filename and timestamp
 
 ## Usage
 1. Run the executable
