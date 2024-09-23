@@ -1,110 +1,69 @@
-import cv2
 import imagehash
-from PIL import Image
 import os
 import glob
-import gc
+import multiprocessing as mp
+from functools import partial
+from PIL import Image
+from src.framematcher.log_manager import LogManager
+from src.framematcher.video_processor import VideoProcessor
+
 
 class VideoFrameMatcher:
-    def __init__(self, queue):
+    def __init__(self, queue, write_directory=None):
         self.matches = []
         self.target_hash = None
         self.target_image = None
-        self.queue = queue
-
-    def log(self, message):
-        self.queue.put(message)
+        self.write_directory = write_directory
+        self.logger = LogManager(queue)
 
     def set_target_frame(self, target_frame_path):
-        """Set the target frame and store the image."""
         self.target_image = Image.open(target_frame_path)
-        # We'll compute the hash when we know the video resolution
+        self.target_hash = imagehash.phash(self.target_image)
+        self.logger.log(f"Target hash: {self.target_hash}")
 
-    def find_matches(self, video_directory, threshold=5):
+    def find_matches(self, video_directory, threshold=5, num_processes=None):
         if self.target_image is None:
             raise ValueError("Target frame not set. Call set_target_frame() first.")
 
-        self.matches = self.__find_matching_frames(video_directory, threshold)
-        self.queue.put("Processing complete. Showing results...")
-        return self.matches
+        if num_processes is None:
+            num_processes = mp.cpu_count()
 
-    def __find_matching_frames(self, video_directory, threshold):
-        """Find matching frames in videos within a directory."""
+        self.logger.start_periodic_logging()
+        try:
+            self.matches = self._find_matching_frames(video_directory, threshold, num_processes)
+        finally:
+            self.logger.stop_periodic_logging()
+            self.logger.process_logs()
+        self.logger.log("Processing complete. Showing results...")
+        return self.matches, self.logger.get_all_logs()
+
+    def _find_matching_frames(self, video_directory, threshold, num_processes):
+        video_files = self._get_video_files(video_directory)
+
+        with mp.Pool(processes=num_processes) as pool:
+            process_video_partial = partial(VideoProcessor.process_video,
+                                            threshold=threshold,
+                                            write_directory=self.write_directory,
+                                            target_hash=self.target_hash,
+                                            shared_logs=self.logger.shared_logs)
+            results = pool.map(process_video_partial, video_files)
+
         all_matches = []
+        for video_file, matches in zip(video_files, results):
+            if matches:
+                all_matches.append((video_file, matches))
 
-        # List of common video file extensions
+        return all_matches
+
+    def _get_video_files(self, video_directory):
+        """Get a list of all video files in the directory."""
         video_extensions = (
             '*.mp4', '*.avi', '*.mov', '*.mkv', '*.flv', '*.wmv',
             '*.webm', '*.m4v', '*.mpg', '*.mpeg', '*.3gp', '*.3g2',
             '*.mxf', '*.roq', '*.nsv', '*.f4v', '*.f4p', '*.f4a', '*.f4b'
         )
-
-        # Create a list of all video files in the directory
         video_files = []
         for ext in video_extensions:
             video_files.extend(glob.glob(os.path.join(video_directory, ext)))
-
-        # Process each video file
-        for video_file in video_files:
-            try:
-                video_matches = self.__process_video(video_file, threshold)
-
-                if video_matches:
-                    all_matches.append((video_file, video_matches))
-            except Exception as e:
-                self.log(f"Error processing {video_file}: {str(e)}")
-
-            # Garbage collect after processing each video
-            gc.collect()
-
-        return all_matches
-
-    def __process_video(self, video_path, threshold):
-        """Process video frames and store matching frames."""
-        video = cv2.VideoCapture(video_path)
-        fps = video.get(cv2.CAP_PROP_FPS)
-        frame_count = 0
-        matches = []
-
-        # Get video resolution and resize target image
-        width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
-        height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        resized_target = self.__resize_image(self.target_image, (width, height))
-        self.target_hash = imagehash.phash(resized_target)
-
-        self.log(f"Processing {video_path}")
-        self.log(f"Video FPS: {fps}, Resolution: {width}x{height}")
-        self.log(f"Target hash: {self.target_hash}")
-
-
-        while True:
-            ret, frame = video.read()
-            if not ret:
-                break
-
-            pil_image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-            frame_hash = imagehash.phash(pil_image)
-
-            hash_diff = abs(self.target_hash - frame_hash)
-
-            if hash_diff <= threshold:
-                timestamp = frame_count / fps  # Convert frame count to seconds
-                matches.append((frame_count, timestamp))
-                self.log(
-                    f"Match found at frame {frame_count}, timestamp {timestamp:.2f}s, hash difference: {hash_diff}")
-
-            frame_count += 1
-
-            # Garbage collect every 1000 frames
-            if frame_count % 1000 == 0:
-                gc.collect()
-                self.log(f"Processed {frame_count} frames...")
-
-        video.release()
-        self.log(f"Total frames processed: {frame_count}")
-        return matches
-
-    def __resize_image(self, image, size):
-        """Resize the image to match the video resolution."""
-        return image.resize(size, Image.LANCZOS)
+        return video_files
 
