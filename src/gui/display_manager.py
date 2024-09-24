@@ -2,6 +2,7 @@ import threading
 import time
 import os
 import queue
+import multiprocessing as mp
 from tkinter import filedialog, messagebox, Text, END, WORD, ttk, Toplevel, Scrollbar
 
 
@@ -14,10 +15,10 @@ class DisplayManager:
 
     def create_output_text(self):
         self.output_text = Text(self.window, wrap=WORD, width=60, height=20)
-        self.output_text.grid(row=11, column=0, columnspan=2, pady=10)
+        self.output_text.grid(row=13, column=0, columnspan=2, pady=10)
 
         scrollbar = ttk.Scrollbar(self.window, orient="vertical", command=self.output_text.yview)
-        scrollbar.grid(row=11, column=2, sticky="ns")
+        scrollbar.grid(row=13, column=2, sticky="ns")
         self.output_text.configure(yscrollcommand=scrollbar.set)
 
         self.window.after(100, self.check_queue)
@@ -32,6 +33,24 @@ class DisplayManager:
                 raise ValueError("Threshold must be between 0 and 255")
         except ValueError as e:
             self.show_error("Invalid Threshold", str(e))
+            label.config(text="")
+            return None
+
+    def save_max_threads(self, thread_count_value, label):
+        try:
+            thread_count_value = int(thread_count_value)
+            if 1 <= thread_count_value:
+                if thread_count_value > (mp.cpu_count() - 2):
+                    max_threads = max(mp.cpu_count() - 2, 1)
+                    label.config(text=f"Defaulting to Max Allowed: {mp.cpu_count() - 2}")
+                    return max_threads
+                else:
+                    label.config(text=f"Max Threads: {thread_count_value}")
+                    return thread_count_value
+            else:
+                raise ValueError("Max Threads must be 1 or higher")
+        except ValueError as e:
+            self.show_error("Invalid Max Threads", str(e))
             label.config(text="")
             return None
 

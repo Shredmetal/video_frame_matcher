@@ -20,6 +20,7 @@ class Interface:
         self._create_video_directory_selection()
         self._create_threshold_config()
         self._create_search_button()
+        self._create_max_threads_config()
 
         self.display_manager.create_output_text()
 
@@ -69,11 +70,25 @@ class Interface:
         save_threshold_button.grid(row=9, column=0, sticky=W, pady=5)
 
         self.threshold_saved_label = Label(self.window, text="", bg="white", fg="green")
-        self.threshold_saved_label.grid(row=9, column=1, sticky=W, pady=5)
+        self.threshold_saved_label.grid(row=9, column=1, sticky=E, pady=5)
+
+    def _create_max_threads_config(self):
+        max_threads_label = Label(self.window, text="Set Max Threads (Defaults to greater of (CPU Threads - 2) or 1):", bg="white")
+        max_threads_label.grid(row=10, column=0, sticky=W, pady=5)
+
+        self.max_threads_var = StringVar(value="5")
+        self.max_threads_entry = Entry(self.window, textvariable=self.max_threads_var, width=10)
+        self.max_threads_entry.grid(row=10, column=1, sticky=E, pady=5)
+
+        max_threads_button = Button(self.window, text="Save Max Threads", command=self._save_max_threads, bg="white")
+        max_threads_button.grid(row=11, column=0, sticky=W, pady=5)
+
+        self.max_threads_saved_saved_label = Label(self.window, text="", bg="white", fg="green", width=24)
+        self.max_threads_saved_saved_label.grid(row=11, column=1, sticky=E, pady=5, columnspan=2)
 
     def _create_search_button(self):
         self.search_button = Button(self.window, text="Search!", width=20, bg="white", command=self._search_videos)
-        self.search_button.grid(row=10, column=0, columnspan=2, sticky=N, pady=10)
+        self.search_button.grid(row=12, column=0, columnspan=2, sticky=N, pady=10)
 
     def _select_image(self):
         self.img_path = self.display_manager.select_file("Select an image file", [("Image files", "*.jpg *.jpeg *.png *.bmp *.gif"), ("All files", "*.*")])
@@ -85,6 +100,9 @@ class Interface:
 
     def _save_threshold(self):
         self.threshold = self.display_manager.save_threshold(self.threshold_var.get(), self.threshold_saved_label)
+
+    def _save_max_threads(self):
+        self.max_threads = self.display_manager.save_max_threads(self.max_threads_var.get(), self.max_threads_saved_saved_label)
 
     def _search_videos(self):
         if hasattr(self, 'img_path') and hasattr(self, 'video_directory') and hasattr(self, 'write_directory'):
@@ -98,8 +116,8 @@ class Interface:
 
             def search_thread():
                 try:
-                    num_processes = max(mp.cpu_count() - 2, 1)
-                    matches, logs = self.matcher.find_matches(self.video_directory, self.threshold, num_processes)
+                    num_processes = self.max_threads
+                    matches, logs = self.matcher.find_matches(self.video_directory, num_processes, self.threshold)
                     self.result_queue.put((matches, logs))
                 except Exception as e:
                     print(f"An error occurred during the search: {str(e)}")

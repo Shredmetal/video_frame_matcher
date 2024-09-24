@@ -45,7 +45,7 @@ class VideoProcessor:
 
                 if frame_count % 1000 == 0:
                     gc.collect()
-                    shared_logs.append(f"Processed {frame_count} frames...")
+                    shared_logs.append(f"Processed {frame_count} frames of {video_path}...")
 
             shared_logs.append(f"Total frames processed for {video_path}: {frame_count}")
             return matches

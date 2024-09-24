@@ -21,12 +21,9 @@ class VideoFrameMatcher:
         self.target_hash = imagehash.phash(self.target_image)
         self.logger.log(f"Target hash: {self.target_hash}")
 
-    def find_matches(self, video_directory, threshold=5, num_processes=None):
+    def find_matches(self, video_directory, num_processes=1, threshold=5):
         if self.target_image is None:
             raise ValueError("Target frame not set. Call set_target_frame() first.")
-
-        if num_processes is None:
-            num_processes = mp.cpu_count()
 
         self.logger.start_periodic_logging()
         try:
