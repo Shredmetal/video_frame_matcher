@@ -45,12 +45,12 @@ class DisplayManager:
                     label.config(text=f"Defaulting to Max Allowed: {mp.cpu_count() - 2}")
                     return max_threads
                 else:
-                    label.config(text=f"Max Threads: {thread_count_value}")
+                    label.config(text=f"Max Processes: {thread_count_value}")
                     return thread_count_value
             else:
-                raise ValueError("Max Threads must be 1 or higher")
+                raise ValueError("Max Processes must be 1 or higher")
         except ValueError as e:
-            self.show_error("Invalid Max Threads", str(e))
+            self.show_error("Invalid Max Processes", str(e))
             label.config(text="")
             return None
 

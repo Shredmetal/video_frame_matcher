@@ -73,14 +73,14 @@ class Interface:
         self.threshold_saved_label.grid(row=9, column=1, sticky=E, pady=5)
 
     def _create_max_threads_config(self):
-        max_threads_label = Label(self.window, text="Set Max Threads (Defaults to greater of (CPU Threads - 2) or 1):", bg="white")
+        max_threads_label = Label(self.window, text="Set Max Processes (Defaults to greater of (CPU Threads - 2) or 1):", bg="white")
         max_threads_label.grid(row=10, column=0, sticky=W, pady=5)
 
         self.max_threads_var = StringVar(value="5")
         self.max_threads_entry = Entry(self.window, textvariable=self.max_threads_var, width=10)
         self.max_threads_entry.grid(row=10, column=1, sticky=E, pady=5)
 
-        max_threads_button = Button(self.window, text="Save Max Threads", command=self._save_max_threads, bg="white")
+        max_threads_button = Button(self.window, text="Save Max Processes", command=self._save_max_threads, bg="white")
         max_threads_button.grid(row=11, column=0, sticky=W, pady=5)
 
         self.max_threads_saved_saved_label = Label(self.window, text="", bg="white", fg="green", width=24)
