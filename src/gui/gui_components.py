@@ -98,7 +98,7 @@ class Interface:
 
             def search_thread():
                 try:
-                    num_processes = mp.cpu_count()
+                    num_processes = max(mp.cpu_count() - 2, 1)
                     matches, logs = self.matcher.find_matches(self.video_directory, self.threshold, num_processes)
                     self.result_queue.put((matches, logs))
                 except Exception as e:
