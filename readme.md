@@ -37,6 +37,8 @@ But that said, having close matches to search from in the write directory should
 
 ## Threshold Settings Examples:
 
+I grabbed some cel scans and tested them on pokemon episodes:
+
 Setting a higher threshold will pick out slightly different things, this one was at threshold 15 and is wrong: 
 
 ![threshold_15](https://github.com/user-attachments/assets/60ba1d5a-2d5c-4990-ac44-3ab1a75a13ec)
