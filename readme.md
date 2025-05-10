@@ -1,5 +1,7 @@
 # Frame Finder
 
+Update 11/5/2025 - I have access to a Mac now so I'll try to do a mac version build, it will go into releases when I have tested it.
+
 A quick tool to find the exact episode and timestamp of a frame in a video.
 
 Garbage collects every 1,000 frames it processes. It might take a while to get through a pile of videos because it checks every frame.
